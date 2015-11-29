@@ -90,15 +90,10 @@ public class MangaK : Granite.Application {
         headerbar.set_title ("Mangak");
         headerbar.set_subtitle ("Manga Reader");
         
-        //Button to open file locate on headerbar
+        //Button on headerbar to open file
         /*chooseArt = new Gtk.Button.from_icon_name("document-open",Gtk.IconSize.LARGE_TOOLBAR);
         chooseArt.clicked.connect(show_file_dialog);
         chooseArt.set_tooltip_text("Open Document");*/
-        
-        //About button headerbar
-        /*var about_button = new Gtk.Button.from_icon_name ("help-info", Gtk.IconSize.LARGE_TOOLBAR);
-        about_button.tooltip_text = "About this application";
-        about_button.clicked.connect (() => {show_about (window);});*/
         
         view_mode = new Granite.Widgets.ModeButton ();
         view_mode.append_icon ("view-dual-symbolic", Gtk.IconSize.BUTTON);
@@ -115,13 +110,9 @@ public class MangaK : Granite.Application {
         nav_mode.append_icon ("go-next-symbolic", Gtk.IconSize.BUTTON);
         nav_mode.append_icon ("go-last-symbolic", Gtk.IconSize.BUTTON);
 
-
-        //var avatar = create_avatar ();
         headerbar.pack_start(view_mode);
         headerbar.pack_start(nav_mode);
         //headerbar.pack_start(chooseArt);
-        //headerbar.pack_end(avatar);
-        //headerbar.pack_end(about_button);
         headerbar.pack_end(viewer_mode);
         window.set_titlebar(headerbar);
     }
@@ -217,34 +208,12 @@ public class MangaK : Granite.Application {
                                       "_OK", Gtk.ResponseType.ACCEPT);
 
 	        if (file_chooser.run () == Gtk.ResponseType.ACCEPT) {
-	        	//this.folderList_i.projectList.clear();
 	            var docName = file_chooser.get_filename();
 				//image.set_from_file (docName);
 				stdout.printf (docName);
-	            //docManager.openFolder(docName, folderList_i, this);
-	            //this.folderList_i.refilter();
 	        }
 	        file_chooser.destroy ();
         }
-   
-   /*private Granite.Widgets.Avatar create_avatar () {
-       var username = GLib.Environment.get_user_name ();
-       var avatar = new Granite.Widgets.Avatar ();
-       var iconfile = @"/var/lib/AccountsService/icons/$username";
-
-       avatar.valign = Gtk.Align.CENTER;
-
-       try {
-           var pixbuf = new Gdk.Pixbuf.from_file (iconfile);
-           avatar.pixbuf = pixbuf.scale_simple (24, 24, Gdk.InterpType.BILINEAR);
-           avatar.set_tooltip_text ("Avatar widget: User image found");
-       } catch (Error e) {
-           avatar.show_default (24);
-           avatar.set_tooltip_text ("Avatar widget: User image not found, using fallback");
-       }
-
-       return avatar;
-   }*/
        
 
     public static int main (string[] args) {
