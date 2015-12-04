@@ -21,16 +21,35 @@ namespace MangaK {
 
 public class MangaK : Granite.Application {
 
-    Gtk.Window          window;
-    Gtk.Stack           main_stack;
+    Gtk.Window                  window;
+    Gtk.Stack                   main_stack;
 
-    Gtk.HeaderBar       headerbar;
-    //Gtk.Button        chooseArt;
-    Gtk.Image           image;
-    Gtk.ActionGroup     main_actions;
+    Gtk.HeaderBar               headerbar;
+    //Gtk.Button                chooseArt;
+    Gtk.Image                   image;
+    Gtk.Paned                   paned;
+    Gtk.ActionGroup             main_actions;
     Granite.Widgets.ModeButton  view_mode;
     Granite.Widgets.ModeButton  viewer_mode;
     Granite.Widgets.ModeButton  nav_mode;
+    Gtk.ScrolledWindow          scrolled_image;
+    Gtk.ListStore               liststore;
+    Gtk.TreeView                treeview;
+    Gtk.ScrolledWindow          scrolled_thumbs;
+    Gtk.EventBox                eventbox_image;
+    Gtk.Adjustment              hadj;
+    Gtk.Adjustment              vadj;
+    Gdk.Pixbuf                  pixbuf;
+    Gdk.Pixbuf                  pixbuf_scaled;
+    
+    
+    double zoom = 1.00;
+    int pixbuf_width;
+    int pixbuf_height;
+    bool list_visible;
+    string file;
+    string basename; 
+    
     
     
     construct {
@@ -139,17 +158,171 @@ public class MangaK : Granite.Application {
     
         
     public void create_content(){
-        
+    
         image = new Gtk.Image ();
         
-        var viewport = new Gtk.Viewport(null, null);
+        //var viewport = new Gtk.Viewport(null, null);
         
-        
-         var scrolled = new Gtk.ScrolledWindow (null, null);
-         scrolled.add(viewport);
+        paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
+        paned.set_position(150);
+        scrolled_image = new Gtk.ScrolledWindow (null, null);
+        scrolled_image.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC);
+        scrolled_image.expand = true;
+        scrolled_image.set_size_request(200, 0);
+        scrolled_image.add(image);
           
-         viewport.add (image);
-        main_stack.add_named(scrolled, "content");
+         //viewport.add (image);
+       
+        
+        
+        liststore = new Gtk.ListStore(3, typeof (Gdk.Pixbuf), typeof (string), typeof (string));
+
+        treeview = new Gtk.TreeView();
+        treeview.set_model(liststore);
+        treeview.set_headers_visible(false);
+        treeview.set_activate_on_single_click(true);
+        treeview.row_activated.connect(show_selected_image);
+        treeview.insert_column_with_attributes (1, ("Preview"), new Gtk.CellRendererPixbuf(), "pixbuf");
+        
+        scrolled_thumbs = new Gtk.ScrolledWindow (null,null);
+        scrolled_thumbs.add(treeview);
+        
+        eventbox_image = new Gtk.EventBox();
+        eventbox_image.add(scrolled_image);
+        eventbox_image.show();
+        
+        paned.add1(scrolled_thumbs);
+        paned.add2(eventbox_image);
+        
+        hadj = scrolled_image.get_hadjustment();
+        vadj = scrolled_image.get_vadjustment();
+        
+        main_stack.add_named(paned, "content");
+    }
+    
+    public override void open(File[] files, string hint)
+    {
+        activate();
+        foreach (File f in files)
+        {
+            file = f.get_path();
+        }
+
+        list_images(Path.get_dirname(file));
+    }
+    
+    // Treeview
+    private void list_images(string directory)
+    {
+        try {
+            liststore.clear();
+            Environment.set_current_dir(directory);
+            var d = File.new_for_path(directory);
+            var enumerator = d.enumerate_children(FileAttribute.STANDARD_NAME, 0);
+            FileInfo info;
+            while((info = enumerator.next_file()) != null) {
+                string output = info.get_name();
+                var file_check = File.new_for_path(output);
+                var file_info = file_check.query_info("standard::content-type", 0, null);
+                string content = file_info.get_content_type();
+                if ( content.contains("image")) {
+                    string fullpath = directory + "/" + output;
+                    Gdk.Pixbuf pixbuf = null;
+                    Gtk.TreeIter? iter = null;
+                    load_thumbnail.begin(fullpath, (obj, res) =>
+                    {
+                        pixbuf = load_thumbnail.end(res);
+                        liststore.append(out iter);
+                        liststore.set(iter, 0, pixbuf, 1, fullpath, 2, output, -1);
+                        if (file == fullpath) {
+                            treeview.get_selection().select_iter(iter);
+                            Gtk.TreePath path = treeview.get_model().get_path(iter);
+                            treeview.scroll_to_cell(path, null, false, 0, 0);
+                        }
+                    });
+                }
+            }
+            treeview.grab_focus();
+        } catch(Error e) {
+            stderr.printf("Error: %s\n", e.message);
+        }
+    }
+    
+    private async Gdk.Pixbuf load_thumbnail(string name)
+    {
+        Gdk.Pixbuf? pix = null;
+        var file = GLib.File.new_for_path(name);
+        try
+        {
+            GLib.InputStream stream = yield file.read_async();
+            pix = yield new Gdk.Pixbuf.from_stream_at_scale_async(stream, 140, 100, true, null);
+        }
+        catch (Error e)
+        {
+            stderr.printf("%s\n", e.message);
+        }
+        return pix;
+    }
+    
+    private void load_pixbuf_with_size(int pixbuf_width, int pixbuf_height)
+    {
+        try
+        {
+            pixbuf = new Gdk.Pixbuf.from_file(file);
+            if (pixbuf.get_width() <= 400)
+            {
+                pixbuf_scaled = pixbuf;
+                zoom = 1.00;
+                image.set_from_pixbuf(pixbuf);
+            }
+            else
+            {
+                try
+                {
+                    pixbuf_scaled = new Gdk.Pixbuf.from_file_at_size(file, pixbuf_width, pixbuf_width);
+                    zoom = (double)pixbuf_scaled.get_width() / pixbuf.get_width();
+                    image.set_from_pixbuf(pixbuf_scaled);
+                }
+                catch(Error error)
+                {
+                    stderr.printf("error: %s\n", error.message);
+                }
+            }
+            //update_title();
+            
+        }
+        catch(Error error)
+        {
+            stderr.printf("error: %s\n", error.message);
+        }
+    }
+    
+    // load pixbuf on start
+    private void load_pixbuf_on_start()
+    {
+        int width, height;
+        window.get_size(out width, out height);
+        if ((window.get_window().get_state() & Gdk.WindowState.FULLSCREEN) != 0)
+        {
+            pixbuf_width = width;
+            pixbuf_height = height;
+        }
+        else
+        {
+            pixbuf_width = scrolled_image.get_allocated_width();
+            pixbuf_height = scrolled_image.get_allocated_height();
+        }
+        load_pixbuf_with_size(pixbuf_width, pixbuf_height);
+    }
+
+    private void show_selected_image()
+    {
+        Gtk.TreeIter iter;
+        Gtk.TreeModel model;
+        var selection = treeview.get_selection();
+        selection.get_selected(out model, out iter);
+        model.get(iter, 1, out file);
+        load_pixbuf_on_start();
     }
     
  private void open_file_dialog(){
@@ -185,17 +358,16 @@ public class MangaK : Granite.Application {
          }
      });
      
-     switch (dialog.run ())
- 	{
- 		case Gtk.ResponseType.ACCEPT:
- 			var filename = dialog.get_filename ();
- 			image.set_from_file (filename);
- 			//stdout.printf (filename);
- 			break;
- 		case Gtk.ResponseType.CANCEL:
- 			break;
- 	}
- 	dialog.destroy ();
+     if (file != null)
+     {
+         dialog.set_current_folder(Path.get_dirname(file));
+     }
+     if (dialog.run() == Gtk.ResponseType.ACCEPT)
+     {
+         file = dialog.get_filename();
+         list_images(Path.get_dirname(file));
+     }
+     dialog.destroy();
  }
     
     
