@@ -23,7 +23,7 @@ public class MangaK : Granite.Application {
 
     Gtk.Window          window;
     Gtk.Stack           main_stack;
-    Gtk.Paned           main_paned;
+
     Gtk.HeaderBar       headerbar;
     //Gtk.Button        chooseArt;
     Gtk.Image           image;
@@ -41,7 +41,7 @@ public class MangaK : Granite.Application {
         app_years = "2015";
 
         build_version = "0.1";
-        app_icon = "book";
+        app_icon = "default";
         main_url = "";
         bug_url = "";
         help_url = "";
@@ -53,7 +53,7 @@ public class MangaK : Granite.Application {
             "Carlos Gomes <cjgomes.it@gmail.com>"
         };
 
-        about_comments = "A manga reader app with a beautiful design";
+        about_comments = "A manga reader app for elementary OS";
         about_translators = "Launchpad Translators";
         about_license_type = Gtk.License.GPL_3_0;
     }
@@ -68,7 +68,6 @@ public class MangaK : Granite.Application {
         
         main_stack = new Gtk.Stack();
         main_stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
-        main_paned = new Gtk.Paned (Gtk.Orientation.HORIZONTAL);
    
    
         create_headerbar();
