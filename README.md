@@ -1,7 +1,7 @@
 # MangaK
 
 A simple app for reading mangas designed for elementary OS
-DONT WORKS YET!
+<Enter>DONT WORKS YET!
 
 ![Alt text](https://github.com/cjgomes/MangaK/blob/master/screenshots/welcomePage.png?raw=true "Welcome Page")
 
