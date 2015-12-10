@@ -26,6 +26,7 @@ public class MangaK : Granite.Application {
 
     Gtk.HeaderBar               headerbar;
     //Gtk.Button                chooseArt;
+    Granite.Widgets.AppMenu 	newButton;
     Gtk.Image                   image;
     Gtk.Paned                   paned;
     Gtk.ActionGroup             main_actions;
@@ -36,6 +37,7 @@ public class MangaK : Granite.Application {
     Gtk.ListStore               liststore;
     Gtk.TreeView                treeview;
     Gtk.ScrolledWindow          scrolled_thumbs;
+    Gtk.Revealer                revealer;
     Gtk.EventBox                eventbox_image;
     Gtk.Adjustment              hadj;
     Gtk.Adjustment              vadj;
@@ -113,6 +115,20 @@ public class MangaK : Granite.Application {
         chooseArt.clicked.connect(show_file_dialog);
         chooseArt.set_tooltip_text("Open Document");*/
         
+        var accel_group = new Gtk.AccelGroup();
+        
+        Gtk.Menu newModel = new Gtk.Menu ();
+		newModel.set_accel_group(accel_group);
+		
+		Gtk.MenuItem preferences = new Gtk.MenuItem.with_label ("Preferences");
+		preferences.activate.connect(() =>{
+			create_preferences();
+		});
+		newModel.add(preferences);
+		
+		newButton = new Granite.Widgets.AppMenu(newModel);
+		newButton.set_stock_id("new");
+        
         view_mode = new Granite.Widgets.ModeButton ();
         view_mode.append_icon ("view-dual-symbolic", Gtk.IconSize.BUTTON);
         view_mode.append_icon ("view-paged-symbolic", Gtk.IconSize.BUTTON);
@@ -131,6 +147,7 @@ public class MangaK : Granite.Application {
         headerbar.pack_start(view_mode);
         headerbar.pack_start(nav_mode);
         //headerbar.pack_start(chooseArt);
+        headerbar.pack_end(newButton);
         headerbar.pack_end(viewer_mode);
         window.set_titlebar(headerbar);
     }
@@ -163,7 +180,7 @@ public class MangaK : Granite.Application {
         
         //var viewport = new Gtk.Viewport(null, null);
         
-        paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
+        //paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
         paned.set_position(150);
         scrolled_image = new Gtk.ScrolledWindow (null, null);
         scrolled_image.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC);
@@ -191,13 +208,23 @@ public class MangaK : Granite.Application {
         eventbox_image.add(scrolled_image);
         eventbox_image.show();
         
-        paned.add1(scrolled_thumbs);
-        paned.add2(eventbox_image);
+        //paned.add1(scrolled_thumbs);
+        //paned.add2(eventbox_image);
+        
+        revealer = new Gtk.Revealer();
+        revealer.add(scrolled_thumbs);
+        revealer.set_reveal_child(true);
+        revealer.set_transition_duration(300);
+        revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT);
+        
+        var grid = new Gtk.Grid();
+        grid.attach(revealer, 0, 0, 1, 1);
+        grid.attach_next_to(eventbox_image, revealer, Gtk.PositionType.RIGHT, 1, 1);
         
         hadj = scrolled_image.get_hadjustment();
         vadj = scrolled_image.get_vadjustment();
         
-        main_stack.add_named(paned, "content");
+        main_stack.add_named(grid, "content");
     }
     
     public override void open(File[] files, string hint)
@@ -324,6 +351,65 @@ public class MangaK : Granite.Application {
         model.get(iter, 1, out file);
         load_pixbuf_on_start();
     }
+    
+    public void create_preferences(){
+    var preferences = new Gtk.Dialog();
+    //preferences.set_size_request (400, 500);
+    //preferences.set_modal (true);
+         
+    preferences.get_content_area ().add (dialog_ui());
+    preferences.show_all ();
+    
+        }
+        
+        private Gtk.Widget dialog_ui () {
+            
+            var grid = new Gtk.Grid ();
+            grid.orientation = Gtk.Orientation.VERTICAL;
+            grid.row_spacing = 6;
+            grid.column_spacing = 6;
+  
+            var label = new Gtk.Label ("Mostrar thumbnails");
+  
+             
+  
+        
+            Gtk.Switch _switch = new Gtk.Switch ();
+		    //window.add (_switch);
+    
+		    _switch.notify["active"].connect (() => {
+			if (_switch.active) {
+				revealer.set_reveal_child(true);
+                list_visible = true;
+			} else {
+				revealer.set_reveal_child(false);
+                list_visible = false;
+			}
+		});
+    
+		// Changes the state to on:
+		_switch.set_active (true);
+		grid.attach (label, 0, 0, 1, 1);
+        grid.attach_next_to (_switch, label, Gtk.PositionType.RIGHT, 1, 1);
+//grid.add (label);
+//grid.add (_switch);
+    
+            return grid;
+        }
+    
+    /*private void action_reveal_thumbs()
+    {
+        if (list_visible == false)
+        {
+            revealer.set_reveal_child(true);
+            list_visible = true;
+        }
+        else
+        {
+            revealer.set_reveal_child(false);
+            list_visible = false;
+        }
+    }*/
     
  private void open_file_dialog(){
      var filter = new Gtk.FileFilter ();
