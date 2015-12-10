@@ -218,6 +218,9 @@ public class MangaK : Granite.Application {
         revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT);
         
         var grid = new Gtk.Grid();
+        grid.orientation = Gtk.Orientation.VERTICAL;
+        grid.row_spacing = 6;
+        grid.column_spacing = 6;
         grid.attach(revealer, 0, 0, 1, 1);
         grid.attach_next_to(eventbox_image, revealer, Gtk.PositionType.RIGHT, 1, 1);
         
