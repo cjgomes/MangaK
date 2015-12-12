@@ -178,20 +178,12 @@ public class MangaK : Granite.Application {
     
         image = new Gtk.Image ();
         
-        //var viewport = new Gtk.Viewport(null, null);
-        
-        //paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-        paned.set_position(150);
         scrolled_image = new Gtk.ScrolledWindow (null, null);
         scrolled_image.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC);
         scrolled_image.expand = true;
         scrolled_image.set_size_request(200, 0);
         scrolled_image.add(image);
           
-         //viewport.add (image);
-       
-        
-        
         liststore = new Gtk.ListStore(3, typeof (Gdk.Pixbuf), typeof (string), typeof (string));
 
         treeview = new Gtk.TreeView();
@@ -201,15 +193,13 @@ public class MangaK : Granite.Application {
         treeview.row_activated.connect(show_selected_image);
         treeview.insert_column_with_attributes (1, ("Preview"), new Gtk.CellRendererPixbuf(), "pixbuf");
         
-        scrolled_thumbs = new Gtk.ScrolledWindow (null,null);
+        scrolled_thumbs = new Gtk.ScrolledWindow (null, null);
+        scrolled_thumbs.set_size_request(130, 100);
         scrolled_thumbs.add(treeview);
         
         eventbox_image = new Gtk.EventBox();
         eventbox_image.add(scrolled_image);
         eventbox_image.show();
-        
-        //paned.add1(scrolled_thumbs);
-        //paned.add2(eventbox_image);
         
         revealer = new Gtk.Revealer();
         revealer.add(scrolled_thumbs);
@@ -219,8 +209,7 @@ public class MangaK : Granite.Application {
         
         var grid = new Gtk.Grid();
         grid.orientation = Gtk.Orientation.VERTICAL;
-        grid.row_spacing = 6;
-        grid.column_spacing = 6;
+        grid.column_spacing = 2;
         grid.attach(revealer, 0, 0, 1, 1);
         grid.attach_next_to(eventbox_image, revealer, Gtk.PositionType.RIGHT, 1, 1);
         
@@ -241,7 +230,7 @@ public class MangaK : Granite.Application {
         list_images(Path.get_dirname(file));
     }
     
-    // Treeview
+    // Treeview_receive
     private void list_images(string directory)
     {
         try {
@@ -285,7 +274,7 @@ public class MangaK : Granite.Application {
         try
         {
             GLib.InputStream stream = yield file.read_async();
-            pix = yield new Gdk.Pixbuf.from_stream_at_scale_async(stream, 140, 100, true, null);
+            pix = yield new Gdk.Pixbuf.from_stream_at_scale_async(stream, 240, 100, true, null);
         }
         catch (Error e)
         {
@@ -318,7 +307,6 @@ public class MangaK : Granite.Application {
                     stderr.printf("error: %s\n", error.message);
                 }
             }
-            //update_title();
             
         }
         catch(Error error)
@@ -356,21 +344,20 @@ public class MangaK : Granite.Application {
     }
     
     public void create_preferences(){
-    var preferences = new Gtk.Dialog();
-    //preferences.set_size_request (400, 500);
-    //preferences.set_modal (true);
+        var preferences = new Gtk.Dialog();
+        //preferences.set_size_request (400, 500);
+        preferences.set_modal (true);
          
-    preferences.get_content_area ().add (dialog_ui());
-    preferences.show_all ();
+        preferences.get_content_area ().add (dialog_ui());
+        preferences.show_all ();
     
-        }
+    }
         
-        private Gtk.Widget dialog_ui () {
+    private Gtk.Widget dialog_ui () {
             
             var grid = new Gtk.Grid ();
             grid.orientation = Gtk.Orientation.VERTICAL;
-            grid.row_spacing = 6;
-            grid.column_spacing = 6;
+            grid.column_spacing = 4;
   
             var label = new Gtk.Label ("Mostrar thumbnails");
   
@@ -378,7 +365,6 @@ public class MangaK : Granite.Application {
   
         
             Gtk.Switch _switch = new Gtk.Switch ();
-		    //window.add (_switch);
     
 		    _switch.notify["active"].connect (() => {
 			if (_switch.active) {
@@ -389,30 +375,14 @@ public class MangaK : Granite.Application {
                 list_visible = false;
 			}
 		});
-    
-		// Changes the state to on:
-		_switch.set_active (true);
+        
+        _switch.set_active (true);
+		
 		grid.attach (label, 0, 0, 1, 1);
         grid.attach_next_to (_switch, label, Gtk.PositionType.RIGHT, 1, 1);
-//grid.add (label);
-//grid.add (_switch);
     
             return grid;
         }
-    
-    /*private void action_reveal_thumbs()
-    {
-        if (list_visible == false)
-        {
-            revealer.set_reveal_child(true);
-            list_visible = true;
-        }
-        else
-        {
-            revealer.set_reveal_child(false);
-            list_visible = false;
-        }
-    }*/
     
  private void open_file_dialog(){
      var filter = new Gtk.FileFilter ();
@@ -481,4 +451,4 @@ public class MangaK : Granite.Application {
         return application.run (args);
     }
 }
-}
+}   
